@@ -98,14 +98,16 @@ fun CalculatorScreen(modifier: Modifier = Modifier) {
                 resultText = ""
             }
             "=" -> {
-                if (expression != "0") {
+                if (expression != "0" && expression != "Error") {
                     resultText = evaluateExpression(expression)
-                    // Optionally update expression to result for continuous calculation
-                    // expression = resultText 
                 }
             }
             "+", "-", "*", "/" -> {
                 if (expression == "Error") expression = "0"
+                if (resultText.isNotEmpty()) {
+                    expression = resultText
+                    resultText = ""
+                }
                 val lastChar = expression.last()
                 if (lastChar in "+-*/") {
                     expression = expression.dropLast(1) + label
@@ -114,8 +116,9 @@ fun CalculatorScreen(modifier: Modifier = Modifier) {
                 }
             }
             else -> { // Numbers
-                if (expression == "0" || expression == "Error") {
+                if (expression == "0" || expression == "Error" || resultText.isNotEmpty()) {
                     expression = label
+                    resultText = ""
                 } else {
                     expression += label
                 }
@@ -130,7 +133,7 @@ fun CalculatorScreen(modifier: Modifier = Modifier) {
         verticalArrangement = Arrangement.spacedBy(8.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Display Area - Expression and Result on the same line if possible, or stacked but unified
+        // Display Area
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -176,24 +179,40 @@ fun CalculatorScreen(modifier: Modifier = Modifier) {
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 row.forEach { label ->
-                    val isOperator = label in listOf("/", "*", "-", "+", "=")
-                    val isClear = label == "AC"
-                    
                     Button(
                         onClick = { onButtonClick(label) },
                         modifier = Modifier
                             .weight(1f)
                             .aspectRatio(1f),
-                        colors = when {
-                            isOperator -> ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        colors = when (label) {
+                            "/" -> ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.secondary,
+                                contentColor = MaterialTheme.colorScheme.onSecondary
                             )
-                            isClear -> ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.errorContainer,
-                                contentColor = MaterialTheme.colorScheme.onErrorContainer
+                            "*" -> ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.tertiary,
+                                contentColor = MaterialTheme.colorScheme.onTertiary
                             )
-                            else -> ButtonDefaults.buttonColors()
+                            "-" -> ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                            "+" -> ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+                            )
+                            "=" -> ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary
+                            )
+                            "AC" -> ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.error,
+                                contentColor = MaterialTheme.colorScheme.onError
+                            )
+                            else -> ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         },
                         shape = MaterialTheme.shapes.medium
                     ) {
