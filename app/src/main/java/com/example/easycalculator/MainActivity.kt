@@ -4,13 +4,19 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -39,8 +45,6 @@ fun CalculatorScreen(modifier: Modifier = Modifier) {
 
     fun evaluateExpression(expr: String): String {
         try {
-            // Simple BODMAS implementation
-            // 1. Tokenize (numbers and operators)
             val tokens = mutableListOf<String>()
             var number = StringBuilder()
             for (char in expr) {
@@ -58,12 +62,12 @@ fun CalculatorScreen(modifier: Modifier = Modifier) {
 
             if (tokens.isEmpty()) return "0"
 
-            // 2. Process Multiplication and Division (*) and (/)
             val afterMD = mutableListOf<String>()
             var i = 0
             while (i < tokens.size) {
                 val token = tokens[i]
                 if (token == "*" || token == "/") {
+                    if (afterMD.isEmpty()) return "Error"
                     val prev = afterMD.removeAt(afterMD.size - 1).toDouble()
                     val next = tokens[i + 1].toDouble()
                     val res = if (token == "*") prev * next else prev / next
@@ -75,7 +79,6 @@ fun CalculatorScreen(modifier: Modifier = Modifier) {
                 }
             }
 
-            // 3. Process Addition and Subtraction (+) and (-)
             var finalResult = afterMD[0].toDouble()
             var j = 1
             while (j < afterMD.size) {
@@ -129,42 +132,58 @@ fun CalculatorScreen(modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+            .background(MaterialTheme.colorScheme.surface)
+            .padding(20.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Display Area
-        Column(
+        // Display Area (The "Screen")
+        Surface(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 32.dp),
-            horizontalAlignment = Alignment.End
+                .height(160.dp)
+                .clip(RoundedCornerShape(24.dp)),
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+            shape = RoundedCornerShape(24.dp),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
         ) {
-            Row(
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(scrollState),
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.Bottom
+                    .fillMaxSize()
+                    .padding(24.dp),
+                verticalArrangement = Arrangement.Bottom,
+                horizontalAlignment = Alignment.End
             ) {
-                Text(
-                    text = expression,
-                    fontSize = if (resultText.isEmpty()) 48.sp else 24.sp,
-                    textAlign = TextAlign.End,
-                    maxLines = 1,
-                    color = if (resultText.isEmpty()) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.secondary
-                )
-                if (resultText.isNotEmpty()) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(scrollState),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.Bottom
+                ) {
                     Text(
-                        text = " = $resultText",
-                        fontSize = 48.sp,
+                        text = expression,
+                        fontSize = if (resultText.isEmpty()) 44.sp else 24.sp,
+                        fontWeight = FontWeight.Medium,
                         textAlign = TextAlign.End,
                         maxLines = 1,
-                        color = MaterialTheme.colorScheme.primary
+                        color = if (resultText.isEmpty()) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    if (resultText.isNotEmpty()) {
+                        Text(
+                            text = " = $resultText",
+                            fontSize = 44.sp,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.End,
+                            maxLines = 1,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
             }
         }
+
+        Spacer(modifier = Modifier.height(8.dp))
 
         val buttons = listOf(
             listOf("7", "8", "9", "/"),
@@ -173,50 +192,61 @@ fun CalculatorScreen(modifier: Modifier = Modifier) {
             listOf("AC", "0", "=", "+")
         )
 
-        buttons.forEach { row ->
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                row.forEach { label ->
-                    Button(
-                        onClick = { onButtonClick(label) },
-                        modifier = Modifier
-                            .weight(1f)
-                            .aspectRatio(1f),
-                        colors = when (label) {
-                            "/" -> ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.secondary,
-                                contentColor = MaterialTheme.colorScheme.onSecondary
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            buttons.forEach { row ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    row.forEach { label ->
+                        Button(
+                            onClick = { onButtonClick(label) },
+                            modifier = Modifier
+                                .weight(1f)
+                                .aspectRatio(1f),
+                            contentPadding = PaddingValues(0.dp),
+                            colors = when (label) {
+                                "/" -> ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.secondary,
+                                    contentColor = MaterialTheme.colorScheme.onSecondary
+                                )
+                                "*" -> ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.tertiary,
+                                    contentColor = MaterialTheme.colorScheme.onTertiary
+                                )
+                                "-" -> ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                                "+" -> ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+                                )
+                                "=" -> ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary,
+                                    contentColor = MaterialTheme.colorScheme.onPrimary
+                                )
+                                "AC" -> ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.error,
+                                    contentColor = MaterialTheme.colorScheme.onError
+                                )
+                                else -> ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            },
+                            shape = RoundedCornerShape(24.dp), // More rounded corners for buttons too
+                            elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
+                        ) {
+                            Text(
+                                text = label,
+                                fontSize = 28.sp,
+                                fontWeight = FontWeight.Bold
                             )
-                            "*" -> ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.tertiary,
-                                contentColor = MaterialTheme.colorScheme.onTertiary
-                            )
-                            "-" -> ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                            )
-                            "+" -> ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                                contentColor = MaterialTheme.colorScheme.onTertiaryContainer
-                            )
-                            "=" -> ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primary,
-                                contentColor = MaterialTheme.colorScheme.onPrimary
-                            )
-                            "AC" -> ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.error,
-                                contentColor = MaterialTheme.colorScheme.onError
-                            )
-                            else -> ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                                contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        },
-                        shape = MaterialTheme.shapes.medium
-                    ) {
-                        Text(text = label, fontSize = 24.sp)
+                        }
                     }
                 }
             }
